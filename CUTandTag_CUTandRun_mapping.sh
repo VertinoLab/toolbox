@@ -64,8 +64,6 @@ genome=hg38
 
 # indexed references
 reference="pathToIndexedGenome/hg38"
-reference_ecoli="pathToIndexedGenome/ecoli"
-reference_phix="pathToIndexedGenome/phix"
 
 # import the sample list
 awk '{print $0=$0".bam"}'         < samples.txt > bamfiles.txt
@@ -86,7 +84,6 @@ echo ""
 echo ""
 
 # mkdir
-mkdir -p QC/bamqc
 mkdir -p QC/bowtie2_summary
 mkdir -p QC/fastp
 mkdir -p QC/misc
@@ -162,28 +159,6 @@ do
 			-S ${sample}.fastp_trim.sam 2> QC/bowtie2_summary/${sample}.bowtie2.txt
 		echo ""
 
-		echo "mapping single-end library of ${sample} to E. coli"
-		bowtie2 -t \
-			-p ${numberOfProcessors} \
-			-x ${reference_ecoli} \
-			--no-unal \
-			--local \
-			--very-sensitive-local \
-			-U ${sample}.R1_trim.fastq.gz \
-			-S ${sample}.ecoli.sam 2> QC/bowtie2_summary/${sample}_ecoli.bowtie2.txt
-		echo ""
-
-		echo "mapping single-end library of ${sample} to phiX"
-		bowtie2 -t \
-			-p ${numberOfProcessors} \
-			-x ${reference_phix} \
-			--no-unal \
-			--local \
-			--very-sensitive-local \
-			-U ${sample}.R1_trim.fastq.gz \
-			-S ${sample}.phix.sam  2> QC/bowtie2_summary/${sample}_phix.bowtie2.txt
-		echo ""
-
 	elif [ "${libraryType}" == "PE" ]; then
 		echo "mapping paired-end library of ${sample} to human genome"
 		bowtie2 -t \
@@ -200,35 +175,6 @@ do
 			-S ${sample}.fastp_trim.sam 2> QC/bowtie2_summary/${sample}.bowtie2.txt
 		echo ""
 
-		echo "mapping paired-end library of ${sample} to E. coli"
-		bowtie2 -t \
-			-p ${numberOfProcessors} \
-			-x ${reference_ecoli} \
-			--no-unal \
-			--local \
-			--very-sensitive-local \
-			--no-mixed \
-			--no-discordant \
-			--maxins ${maxin} \
-			-1 ${sample}.R1_trim.fastq.gz \
-			-2 ${sample}.R2_trim.fastq.gz \
-			-S ${sample}.ecoli.sam 2> QC/bowtie2_summary/${sample}_ecoli.bowtie2.txt
-		echo ""
-
-		echo "mapping paired-end library of ${sample} to phiX"
-		bowtie2 -t \
-			-p ${numberOfProcessors} \
-			-x ${reference_phix} \
-			--no-unal \
-			--local \
-			--very-sensitive-local \
-			--no-mixed \
-			--no-discordant \
-			--maxins ${maxin} \
-			-1 ${sample}.R1_trim.fastq.gz \
-			-2 ${sample}.R2_trim.fastq.gz \
-			-S ${sample}.phix.sam 2> QC/bowtie2_summary/${sample}_phix.bowtie2.txt
-		echo ""
 	else
 		echo "wrong library type"
 	fi
@@ -243,12 +189,7 @@ do
 	rm -f ${sample}.*.sam
 
   	samtools view -bSq ${mappingQuality} ${sample}.filtered.sam > ${sample}.filtered.bam
-	samtools view -bSq ${mappingQuality} ${sample}.ecoli.sam    > ${sample}.ecoli10.bam
-	samtools view -bSq ${mappingQuality} ${sample}.phix.sam     > ${sample}.phix10.bam
 	echo ""
-
-	mv ${sample}.ecoli10.bam bamFiles/ecoli
-	mv ${sample}.phix10.bam  bamFiles/phix
 done
 
 ###################################################################
